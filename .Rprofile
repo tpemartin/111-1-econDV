@@ -23,4 +23,5 @@ ggenv$gg <- list(
 )
 attach(ggenv)
 
-econDV2::attachPlot()
+
+Sys.setenv(CLIPR_ALLOW=TRUE)
