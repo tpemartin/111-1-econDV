@@ -1,0 +1,184 @@
+---
+jupyter: ir
+---
+
+# Color
+
+[reference](https://ggplot2-book.org/scale-colour.html)
+
+  * Hue (色像）
+  * Chroma（彩度）
+  * Luminance（流明）
+
+## Quantitative
+
+
+
+### Single sequential 
+
+```{r}
+#| id: pSJON8bCOUxA
+#| colab: {base_uri: 'https://localhost:8080/', height: 437}
+#| id: pSJON8bCOUxA
+#| outputId: 67e1e32d-b4a3-4822-9470-a1e307f3bc14
+plt = econDV2::Plot()
+plt$ggplot = ggplot(faithfuld, aes(waiting, eruptions, fill = density)) 
+plt$geom = geom_raster() 
+plt$others = list(
+  scale_x_continuous(NULL, expand = c(0, 0)),
+  scale_y_continuous(NULL, expand = c(0, 0)), 
+  theme(legend.position = "none"))
+plt$make()
+```
+
+```{r}
+#| id: qRQdQVerPSNR
+#| colab: {base_uri: 'https://localhost:8080/', height: 437}
+#| id: qRQdQVerPSNR
+#| outputId: 9579e5d6-f56a-45e7-ef5c-75444751eac5
+plt$scale = scale_fill_gradient(
+  low= "#fcc2ab", # in HSL space, move only L 
+  high= "#c63c06" # manual choice
+)
+plt$others[[3]] <- NULL
+
+plt$make()
+```
+
+### Diverging sequential 
+
+You need to install `sf` package for this example
+
+```{r}
+#| id: RRKItBxJiX0-
+#| id: RRKItBxJiX0-
+#| outputId: 788be51f-19cf-4879-fae7-b2f56f1f858c
+#| colab: {base_uri: 'https://localhost:8080/', height: 132}
+remotes::install_github("tpemartin/econIDV")
+```
+
+```{r}
+#| id: PNz3WqoMh4SZ
+#| colab: {base_uri: 'https://localhost:8080/'}
+#| id: PNz3WqoMh4SZ
+#| outputId: c928c4e4-5d41-4763-fc62-def1c9f49565
+examples=econIDV::Examples()
+examples$election()
+examples$election_env$attach()
+```
+
+```{r}
+#| id: m9uOBRNViF1x
+#| colab: {base_uri: 'https://localhost:8080/'}
+#| id: m9uOBRNViF1x
+#| outputId: f2a968bb-4acc-4506-bf77-2c6a6e09ea36
+download_electionData()
+# prepare choropleth map data
+elections |>
+  prepare_choroplethMapData() -> df_elections
+df_elections |>
+  prepare_fillColorByYears_data() -> df_elections_wider
+
+# prepare datatable data
+df_elections |>
+  prepare_dataTableData() -> df_4dataTable_wide
+
+df_elections_wider |>
+  as.data.frame() |> # to remove tibble class for row.names assignment
+  create_sf() |>
+  # 移除geometry空的資料, 否則ggplotly會有錯誤
+  econIDV::remove_emptyGeometry() ->
+  sf_elections_wider
+```
+
+```{r}
+#| id: J2Rk-QDcQZRb
+#| colab: {base_uri: 'https://localhost:8080/', height: 437}
+#| id: J2Rk-QDcQZRb
+#| outputId: 6d67d8a7-5a9d-4ba4-ce09-9b9cd2f1591f
+
+mp = econDV2::Map()
+plt2 = econDV2::Plot()
+plt2$ggplot = ggplot(data = sf_elections_wider)
+plt2$geom = geom_sf()
+plt2$theme = theme_void()
+plt2$make()
+```
+
+:
+
+```{r}
+#| id: LNEewErzkyED
+#| colab: {base_uri: 'https://localhost:8080/', height: 437}
+#| id: LNEewErzkyED
+#| outputId: 6a6d6624-b59e-4a5a-e2eb-79f867daa86c
+plt3 = econDV2::Plot()
+df_elections |>
+  mutate(
+    取色得票率 = dplyr::if_else(取色得票率>0, 取色得票率-50, 取色得票率+50)
+  ) -> df_elections
+plt3$ggplot = ggplot(data=df_elections |> dplyr::filter(年==2012))
+plt3$geom = geom_col(
+  aes(
+    x=地區, y=取色得票率, fill=取色得票率
+  )
+)
+#plt3$scale = scale_fill_brewer(
+#  type="div", palette="BrBG"
+#)
+
+plt3$scale = scale_fill_gradient2(
+  high ="#009a00", # 50
+  low = "#0000aa", # -50
+  midpoint = 0
+)
+plt3$make()
+```
+
+```{r}
+#| id: Bbpn1OHatk3O
+#| colab: {base_uri: 'https://localhost:8080/', height: 437}
+#| outputId: 6a6d6624-b59e-4a5a-e2eb-79f867daa86c
+#| id: Bbpn1OHatk3O
+plt3 = econDV2::Plot()
+df_elections |>
+  mutate(
+    取色得票率 = dplyr::if_else(取色得票率>0, 取色得票率-50, 取色得票率+50)
+  ) -> df_elections
+df_elections |> View()
+
+# rescale: c(-50, 50) -> c(-1,1)
+# ensure low and high colors mapped from the lowest/highest POSSIBLE values
+df_elections |>
+  mutate(
+    取色得票率=scales::rescale(
+      取色得票率, from=c(-50,50 ),
+      to=c(-1,1)
+    )
+  ) -> df_elections
+
+plt3$ggplot = ggplot(data=df_elections |> dplyr::filter(年==2012))
+plt3$geom = geom_col(
+  aes(
+    x=地區, y=取色得票率, fill=取色得票率
+  )
+)
+
+# Use labels to rescale/mapping back to 取色得票率's original values
+plt3$scale = list(scale_fill_gradient2(
+  high ="#009a00", # 1
+  low = "#0000aa", # -1
+  midpoint = 0,
+  # breaks is based on c(-1,1) 取色得票率
+  # if no labels adjustment, labels = breaks.
+  labels = function(x) scales::rescale(x, to=c(-50,50), from =c(-1,1))
+),
+scale_y_continuous(
+  labels=function(x) scales::rescale(x, to=c(-50,50), from =c(-1,1))
+))
+plt3$make()
+```
+
+
+
+
