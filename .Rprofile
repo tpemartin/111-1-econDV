@@ -12,6 +12,8 @@ theme_set(
   )+
     theme_classic()
 )
+colorspace::diverging_hcl(n = 7, h = c(260, 0), c = 100, l = c(50, 90), power = 1, rev = TRUE, register = "cspaceDiverging")
+
 # some handy tool to use later through out the class
 ggenv=new.env()
 ggenv$gg <- list(
