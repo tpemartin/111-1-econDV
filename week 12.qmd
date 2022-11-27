@@ -238,15 +238,16 @@ g + style$scale_y_continuous(name="計次") + style$theme()
 ![Data Range](https://www.economist.com/img/b/834/487/90/sites/default/files/20190112_WOC124.png)
 ```{r}
 df = data.frame(
-  x=1979:2018,
+  year=1979:2018,
   y=1
 )
-g2 <- ggplot(data=df) + geom_blank(aes(x=x, y=y))
+g2 <- ggplot(data=df) + geom_blank(aes(x=year, y=y))
 g2 
 ```
 
 ```{r}
-df$x |> range() -> xrange
+g2 |> ggplot_build() -> .g2
+.g2$data[[1]]$x |> range() -> xrange
 xSeq = xrange[[1]]:xrange[[2]]
 xSeq |> subset(xSeq %% 5 ==0) -> xSeqMod5
 breaks <- c(xrange, xSeqMod5) |> sort()
@@ -255,5 +256,17 @@ labels = breaks
 if(breaks[[2]]-breaks[[1]]==1) labels[[2]]=""
 if(breaks[[length(breaks)]]-breaks[[length(breaks)-1]]==1) labels[[length(labels)-1]]=""
 g2 + scale_x_continuous(breaks=breaks, labels = labels)
+```
+
+```{r}
+style$scale_x_continuouse = function(.range=NULL, ...){
+  assertthat::assert_that(
+    !is.null(.range),
+    msg="Require first input .range, a numeric vector of length 2, as x range"
+  )
+  if(is.null(.range)){
+    
+  }
+}
 ```
 
